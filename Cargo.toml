@@ -6,7 +6,8 @@ authors = ["Emerentius"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/emerentius/partial_application"
 documentation = "https://docs.rs/partial_application"
+readme = "README.md"
 
-description = "Defines the partial! macro for partial function application"
+description = "Offers partial function application through the partial! macro"
 
 [dependencies]

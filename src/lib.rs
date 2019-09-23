@@ -1,13 +1,12 @@
 //! The `partial!` macro allows partial application of a function.
 //!
-//! Invoking `partial!(some_fn(arg0, _, arg2, _))` will return the closure
+//! Invoking `partial!(some_fn => arg0, _, arg2, _)` will return the closure
 //! `|x1, x3| some_fn(arg0, x1, arg2, x3)`. <br>
-//! The function call parentheses inside the macro are optional.
-//! Move closures can be created by adding `move` in front of the function: `partial!(move ..)`
+//! Move closures can be created by adding `move` in front of the function: `partial!(move ..)`.
 //!
 //! Due to the straightforward translation, expression arguments will be reevaluated on every call.
 //! Pre-compute values if you don't want this. <br>
-//! `partial!(some_fn _, _, rand::thread_rng().gen::<u8>(), { println!("called again"); arg3 })` <br>
+//! `partial!(some_fn => _, _, rand::thread_rng().gen::<u8>(), { println!("called again"); arg3 })` <br>
 //! The closure created from the above will get a new random number and print "called again" on every call.
 //!
 //! ```rust
@@ -19,24 +18,29 @@
 //! }
 //!
 //! fn main() {
-//!     let bar = partial!( foo(_, _, 10, _, 10, 10) );
+//!     let bar = partial!(foo => _, _, 10, _, 10, 10);
 //!     assert_eq!(
 //!         foo(15, 15, 10, 42, 10, 10),
 //!         bar(15, 15,     42)
 //!     );
 //! }
 //! ```
+//!
+//! You can also use a comma (`,`) or semicolon (`;`) instead of the arrow `=>`.
+//! This strange syntax choice is due to limitations imposed on us by the macro system.
+//! No other tokens may follow the expression token for the function.
 
 /// The macro that creates a wrapping closure for a partially applied function
 ///
-/// Syntax: `partial!(move? fn_name comma_separated_arg_list)` <br>
-///     or: `partial!(move? fn_name ( comma_separated_arg_list ) )`
+/// Syntax: `partial!(move? fn_name ("=>" | "," | ";") comma_separated_arg_list)`
+///         `=>`, `,` and `;` are completely equivalent and act only as separator between
+///         function and arguments.
 ///
 /// Function arguments are either expressions or `_` <br>
 /// `_` arguments have to be supplied on each call. They forward from the resulting closure into the function. <br>
 /// Expressions are hardcoded into the function call. <br>
-/// `partial!(foo(_))` => `|a| foo(a);` <br>
-/// `partial!(foo(2))` => `|| foo(2);`
+/// `partial!(foo => _)` => `|a| foo(a);` <br>
+/// `partial!(foo => 2)` => `|| foo(2);`
 ///
 /// Prepending `move` to the fn_name creates a move closure. Trailing commas are permitted.
 #[macro_export]
@@ -61,11 +65,11 @@ macro_rules! partial {
     // are simpyl passed through during list processing inside $pt (pass-through)
 
     // exhausted macro arguments, create closure
-    (@inner [(() $id:ident) ($($cl_arg:ident),*) ($($fn_arg:expr),*)] ()) => {
+    (@inner [(() $id:expr) ($($cl_arg:ident),*) ($($fn_arg:expr),*)] ()) => {
         |$($cl_arg),*| $id($($fn_arg),*);
     };
     // with move
-    (@inner [(move $id:ident) ($($cl_arg:ident),*) ($($fn_arg:expr),*)] ()) => {
+    (@inner [(move $id:expr) ($($cl_arg:ident),*) ($($fn_arg:expr),*)] ()) => {
         move |$($cl_arg),*| $id($($fn_arg),*);
     };
 
@@ -97,21 +101,25 @@ macro_rules! partial {
 
     // entry points
     // ordered to match eagerly
-    //
-    // move, parentheses
-    (move $id:ident($($args:tt)*)) => {
+    // move
+    (move $id:expr , $($args:tt)*) => {
         partial!(@inner [(move $id) () ()] ($($args)*))
     };
-    // move, no parentheses
-    (move $id:ident $($args:tt)*) => {
+    (move $id:expr ; $($args:tt)*) => {
         partial!(@inner [(move $id) () ()] ($($args)*))
     };
-    // no move, parentheses
-    ($id:ident($($args:tt)*)) => {
+    (move $id:expr => $($args:tt)*) => {
+        partial!(@inner [(move $id) () ()] ($($args)*))
+    };
+
+    // no move
+    ($id:expr , $($args:tt)*) => {
         partial!(@inner [(() $id) () ()] ($($args)*))
     };
-    // no move, no parentheses
-    ($id:ident $($args:tt)*) => {
+    ($id:expr ; $($args:tt)*) => {
+        partial!(@inner [(() $id) () ()] ($($args)*))
+    };
+    ($id:expr => $($args:tt)*) => {
         partial!(@inner [(() $id) () ()] ($($args)*))
     };
 }
@@ -129,7 +137,7 @@ mod test {
         _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (),
         _: (), _: ()
     ) {
-        let c = partial!(high_arity
+        let c = partial!(high_arity,
             (), (), (), (),     (), (), (), (),     (), (), (), (),
             (), (), (), (),     (), (), (), (),     (), (), (), (),
             (), (), (), (),     (), (), (), (),     (), (), (), (),
@@ -149,7 +157,7 @@ mod test {
 
         for i in 0..10 {
             for j in 0..10 {
-                assert_eq!(foo(i, j), partial!(foo(i, _))(j) );
+                assert_eq!(foo(i, j), partial!(foo => i, _)(j) );
             }
         }
     }
@@ -169,7 +177,7 @@ mod test {
                 .fold(0, |acc, (n, arg)| acc | shift(arg, n))
         }
 
-        let reduced_foo = partial!(foo true, _, _, true, true, _);
+        let reduced_foo = partial!(foo => true, _, _, true, true, _);
         assert_eq!(reduced_foo(false, false, false), 0b100110);
     }
 }
@@ -196,6 +204,8 @@ struct MoveCompileFail;
 #[allow(unused)]
 // compile check
 fn syntax_check() {
+    partial!(::std::vec::Vec::<i32>::with_capacity => _ );
+
     fn foo(_: u8, _: u8, _: u8, _: u8, _: u8,  _: u8, _: String) {}
 
     let a = (String::new(),);
@@ -206,17 +216,17 @@ fn syntax_check() {
 
     // test various forms of expressions
     // and trailing commas for forwarders and expressions
-    partial!(foo(2, _, num, {print!("boo"); 2}, b.0, five(), _));
-    partial!(foo(2, _, num, {print!("boo"); 2}, b.0, five(), _,));
-    partial!(foo(2, _, num, {print!("boo"); 2}, b.0, five(), a.clone().0,));
-    partial!(foo(2, _, num, {print!("boo"); 2}, b.0, five(), a.clone().0));
+    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _);
+    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _,);
+    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), a.clone().0,);
+    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), a.clone().0);
 
-    partial!(move foo(2, _, num, {print!("boo"); 2}, b.0, five(), _));
-    partial!(move foo(2, _, num, {print!("boo"); 2}, b.0, five(), _,));
+    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _);
+    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _,);
     let s = a.clone();
-    partial!(move foo(2, _, num, {print!("boo"); 2}, b.0, five(), s.clone().0,));
+    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), s.clone().0,);
     let s = a.clone();
-    partial!(move foo(2, _, num, {print!("boo"); 2}, b.0, five(), s.clone().0));
+    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), s.clone().0);
     let s = a;
-    partial!(move foo(2, _, num, {print!("boo"); 2}, b.0, five(), s.0));
+    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), s.0);
 }

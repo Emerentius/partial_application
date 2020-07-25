@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), no_std)]
+
 //! The `partial!` macro allows partial application of a function.
 //!
 //! Invoking `partial!(some_fn => arg0, _, arg2, _)` will return the closure

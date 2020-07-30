@@ -1,3 +1,5 @@
+#![no_std]
+
 //! The `partial!` macro allows partial application of a function.
 //!
 //! Invoking `partial!(some_fn => arg0, _, arg2, _)` will return the closure
@@ -204,11 +206,14 @@ struct MoveCompileFail;
 #[allow(unused)]
 // compile check
 fn syntax_check() {
-    partial!(::std::vec::Vec::<i32>::with_capacity => _ );
+    partial!(::core::option::Option::<i32>::is_some => _ );
 
-    fn foo(_: u8, _: u8, _: u8, _: u8, _: u8,  _: u8, _: String) {}
+    #[derive(Clone)]
+    struct NoCopy;
 
-    let a = (String::new(),);
+    fn foo(_: u8, _: u8, _: u8, _: u8, _: u8, _: u8, _: NoCopy) {}
+
+    let a = (NoCopy,);
     let b = (5,);
     let five: fn() -> u8 = || 5;
 
@@ -216,17 +221,17 @@ fn syntax_check() {
 
     // test various forms of expressions
     // and trailing commas for forwarders and expressions
-    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _);
-    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _,);
-    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), a.clone().0,);
-    partial!(foo => 2, _, num, {print!("boo"); 2}, b.0, five(), a.clone().0);
+    partial!(foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), _);
+    partial!(foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), _,);
+    partial!(foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), a.clone().0,);
+    partial!(foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), a.clone().0);
 
-    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _);
-    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), _,);
+    partial!(move foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), _);
+    partial!(move foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), _,);
     let s = a.clone();
-    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), s.clone().0,);
+    partial!(move foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), s.clone().0,);
     let s = a.clone();
-    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), s.clone().0);
+    partial!(move foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), s.clone().0);
     let s = a;
-    partial!(move foo => 2, _, num, {print!("boo"); 2}, b.0, five(), s.0);
+    partial!(move foo => 2, _, num, {stringify!(boo); 2}, b.0, five(), s.0);
 }

@@ -8,6 +8,9 @@ repository = "https://github.com/emerentius/partial_application"
 documentation = "https://docs.rs/partial_application"
 readme = "README.md"
 
-description = "Offers partial function application through the partial! macro"
+keywords = ["argument", "parameter", "binding", "bind", "partial-application"]
+categories = ["no-std", "rust-patterns"]
+
+description = "partial function application via the partial! macro"
 
 [dependencies]

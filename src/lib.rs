@@ -194,7 +194,7 @@ mod test {
 ///     let sub = |a: u32, b: Foo| a - b.0;
 ///
 ///     let f = Foo(5);
-///     let sub5 = partial!(move sub _, f);
+///     let sub5 = partial!(move sub => _, f);
 ///
 ///     sub5(5);
 ///     sub5(5);

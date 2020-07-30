@@ -1,15 +1,9 @@
 #![no_std]
 
-//! The `partial!` macro allows partial application of a function.
+//! The `partial!` macro allows for partial application of a function.
 //!
-//! Invoking `partial!(some_fn => arg0, _, arg2, _)` will return the closure
-//! `|x1, x3| some_fn(arg0, x1, arg2, x3)`. <br>
-//! Move closures can be created by adding `move` in front of the function: `partial!(move ..)`.
-//!
-//! Due to the straightforward translation, expression arguments will be reevaluated on every call.
-//! Pre-compute values if you don't want this. <br>
-//! `partial!(some_fn => _, _, rand::thread_rng().gen::<u8>(), { println!("called again"); arg3 })` <br>
-//! The closure created from the above will get a new random number and print "called again" on every call.
+//! `partial!(some_fn => arg0, _, arg2, _)` returns the closure `|x1, x3| some_fn(arg0, x1, arg2, x3)`. <br>
+//! Move closures are created by adding `move` in front of the function: `partial!(move ..)`
 //!
 //! ```rust
 //! #[macro_use]
@@ -28,7 +22,23 @@
 //! }
 //! ```
 //!
-//! You can also use a comma (`,`) or semicolon (`;`) instead of the arrow `=>`.
+//! The expressions used to fix an argument are reevaluated on every call of the new function because of the straightforward translation behind the macro. <br>
+//! ```rust
+//! # #[macro_use]
+//! # extern crate partial_application;
+//! # fn main() {
+//! #
+//! fn identity(x: u32) -> u32 { x }
+//!
+//! let mut n = 0;
+//! let mut f = partial!(identity => { n += 1; n});
+//! assert_eq!(f(), 1);
+//! assert_eq!(f(), 2);
+//! # }
+//! ```
+//! Pre-compute arguments to be fixed in a local variable, if their creation is expensive or has unwanted side-effects.
+//!
+//! You can also use a comma (`,`) or semicolon (`;`) instead of the arrow (`=>`).
 //! This strange syntax choice is due to limitations imposed on us by the macro system.
 //! No other tokens may follow the expression token for the function.
 
@@ -44,7 +54,7 @@
 /// `partial!(foo => _)` => `|a| foo(a);` <br>
 /// `partial!(foo => 2)` => `|| foo(2);`
 ///
-/// Prepending `move` to the fn_name creates a move closure. Trailing commas are permitted.
+/// Prepending `move` to the `fn_name` creates a move closure. Trailing commas are permitted.
 #[macro_export]
 macro_rules! partial {
     // The macro works with 3 lists

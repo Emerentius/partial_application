@@ -1,11 +1,13 @@
 # partial_application
-This crate contains the `partial!` macro which allows partial application of a function.
-Calling `partial!(some_fn => arg0, _, arg2, _)` will return the closure
-`|x1, x3| some_fn(arg0, x1, arg1, x3)`.
+The `partial!` macro allows for partial application of a function.  
 
-Move closures can be created by adding `move` in front of the function: `partial!(move ..)`
+`partial!(some_fn => arg0, _, arg2, _)` returns the closure `|x1, x3| some_fn(arg0, x1, arg2, x3)`.  
+Move closures are created by adding `move` in front of the function: `partial!(move ..)`
 
 ```rust
+use partial_application::partial;
+
+// When you're using the 2015 edition of Rust, you need to import the macro like this
 #[macro_use]
 extern crate partial_application;
 

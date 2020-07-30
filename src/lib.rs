@@ -131,6 +131,7 @@ mod test {
     // compile time check for maximum arity
     // 60 with default recursion limit
     #[allow(unused)]
+    #[rustfmt::skip]
     fn high_arity(
         _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (),
         _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (), _: (),
@@ -159,7 +160,7 @@ mod test {
 
         for i in 0..10 {
             for j in 0..10 {
-                assert_eq!(foo(i, j), partial!(foo => i, _)(j) );
+                assert_eq!(foo(i, j), partial!(foo => i, _)(j));
             }
         }
     }
@@ -174,7 +175,9 @@ mod test {
             // in reverse so a is most significant
             // resulting number will be abcdef
             // where each letter represents a bit
-            [f, e, d, c, b, a].iter().cloned()
+            [f, e, d, c, b, a]
+                .iter()
+                .cloned()
                 .enumerate()
                 .fold(0, |acc, (n, arg)| acc | shift(arg, n))
         }
